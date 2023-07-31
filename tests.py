@@ -1,6 +1,14 @@
 from tax_calculation import (
     calculate_tax_free_allowance_based_on_children,
     calculate_tax_free_allowance_based_on_elder,
+    calculate_tax_free_allowance,
+    get_income_tax_percent_rate_and_border_leftover,
+    IncomeTaxBorder,
+    get_income_tax_rates_for_receipt_parts,
+    get_income_tax_amount,
+    calculate_income_tax,
+    Month,
+    perform_calculations,
 )
 
 
@@ -47,3 +55,151 @@ def test_calculate_tax_free_allowance_based_on_elder():
         )
         == 0
     )
+
+
+def test_calculate_tax_free_allowance():
+    annual_income = 35000
+    children_count = 2
+    over_65_count = 1
+    over_75_count = 0
+
+    assert (
+        calculate_tax_free_allowance(
+            annual_income=annual_income,
+            children_count=children_count,
+            over_65_count=over_65_count,
+            over_75_count=over_75_count,
+        )
+        == 5100
+    )
+
+
+def test_get_income_tax_percent_rate_and_border_leftover():
+    income_under_19_percent = 10000
+    income_equal_19_percent = 12450
+    income_under_24_percent = 20000
+    income_under_30_percent = 30000
+    income_under_37_percent = 40000
+    income_under_45_percent = 100000
+    income_under_47_percent = 350000
+
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_under_19_percent)
+        == IncomeTaxBorder.BORDER_19_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_19_PERCENT.value[0] - income_under_19_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_equal_19_percent)
+        == IncomeTaxBorder.BORDER_24_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_24_PERCENT.value[0] - income_equal_19_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_equal_19_percent)
+        == IncomeTaxBorder.BORDER_24_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_24_PERCENT.value[0] - income_equal_19_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_under_24_percent)
+        == IncomeTaxBorder.BORDER_24_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_24_PERCENT.value[0] - income_under_24_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_under_30_percent)
+        == IncomeTaxBorder.BORDER_30_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_30_PERCENT.value[0] - income_under_30_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_under_37_percent)
+        == IncomeTaxBorder.BORDER_37_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_37_PERCENT.value[0] - income_under_37_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_under_45_percent)
+        == IncomeTaxBorder.BORDER_45_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_45_PERCENT.value[0] - income_under_45_percent,
+    )
+    assert (
+        get_income_tax_percent_rate_and_border_leftover(income_under_47_percent)
+        == IncomeTaxBorder.BORDER_47_PERCENT.value[1],
+        IncomeTaxBorder.BORDER_47_PERCENT.value[0] - income_under_47_percent,
+    )
+
+
+def test_get_income_tax_rates_for_receipt_parts():
+    total_income_before_receipt = 10000
+    receipt = 10000
+    lower_tax_rate_income_part = (
+        IncomeTaxBorder.BORDER_19_PERCENT.value[0] - total_income_before_receipt
+    )
+    higher_tax_rate_income_part = receipt - lower_tax_rate_income_part
+    assert get_income_tax_rates_for_receipt_parts(
+        total_income_before_receipt, receipt
+    ) == [
+        (IncomeTaxBorder.BORDER_19_PERCENT.value[1], lower_tax_rate_income_part),
+        (IncomeTaxBorder.BORDER_24_PERCENT.value[1], higher_tax_rate_income_part),
+    ]
+
+
+def test_get_income_tax_amount():
+    assert (
+        get_income_tax_amount(
+            [
+                (IncomeTaxBorder.BORDER_19_PERCENT.value[1], 10000),
+                (IncomeTaxBorder.BORDER_24_PERCENT.value[1], 10000),
+            ]
+        )
+        == 1900 + 2400
+    )
+
+
+def test_calculate_income_tax():
+    monthly_salary = 3000
+    annual_receipts_count = 15
+    tax_free_allowances = 2400
+
+    result_dict = calculate_income_tax(
+        monthly_salary, annual_receipts_count, tax_free_allowances
+    )
+    assert result_dict[Month.JAN]["income_tax_amount"] == 114
+    assert result_dict[Month.FEB]["income_tax_amount"] == 570
+    assert result_dict[Month.MAR]["income_tax_amount"] == 570
+    assert result_dict[Month.APR]["income_tax_amount"] == 570
+    assert result_dict[Month.MAY]["income_tax_amount"] == 577.5
+    assert result_dict[Month.JUN]["income_tax_amount"] == 720
+    assert result_dict[Month.JUL]["income_tax_amount"] == 720
+    assert result_dict[Month.AUG]["income_tax_amount"] == 804
+    assert result_dict[Month.SEP]["income_tax_amount"] == 900
+    assert result_dict[Month.OCT]["income_tax_amount"] == 900
+    assert result_dict[Month.NOV]["income_tax_amount"] == 900
+    assert result_dict[Month.DEC]["income_tax_amount"] == 4118
+
+
+def test_perform_calculations():
+    salary_pln = 3000 * 4.7
+    rate = 4.7
+    annual_receipts_count = 15
+    children_count = 1
+    social_security_deductions = 100
+    result_dict = perform_calculations(
+        salary_pln=salary_pln,
+        rate=rate,
+        annual_receipts=annual_receipts_count,
+        children_count=children_count,
+        social_security_deductions=social_security_deductions,
+    )
+    assert result_dict[Month.JAN]["receipt_netto"] == 2786
+    assert result_dict[Month.FEB]["receipt_netto"] == 2330
+    assert result_dict[Month.MAR]["receipt_netto"] == 2330
+    assert result_dict[Month.APR]["receipt_netto"] == 2330
+    assert result_dict[Month.MAY]["receipt_netto"] == 2322.5
+    assert result_dict[Month.JUN]["receipt_netto"] == 2180
+    assert result_dict[Month.JUL]["receipt_netto"] == 2180
+    assert result_dict[Month.AUG]["receipt_netto"] == 2096
+    assert result_dict[Month.SEP]["receipt_netto"] == 2000
+    assert result_dict[Month.OCT]["receipt_netto"] == 2000
+    assert result_dict[Month.NOV]["receipt_netto"] == 2000
+    assert result_dict[Month.DEC]["receipt_netto"] == 7782
+
+    assert [val["social_security_deductions"] for val in result_dict.values()] == [
+        100
+    ] * 12

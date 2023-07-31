@@ -1,6 +1,8 @@
 from typing import Optional
 from enum import Enum
 
+from utils import if_negative_convert_to_zero
+
 
 class IncomeTaxBorder(Enum):  # tuple[0]: border under in EUR, tuple[1]: income tax rate
     BORDER_19_PERCENT = (12450, 19)
@@ -141,24 +143,35 @@ def calculate_income_tax(
     monthly_salary: int | float,
     annual_receipts_count: int,
     tax_free_allowances: int | float,
-) -> dict[Month : int | float]:
+) -> dict[
+    Month : dict[
+        str : int | float,  # receipt_brutto
+        str : int | float,  # income_tax_amount
+        str : int | float,  # receipt_netto
+        str : int | float,  # tax_free_allowances
+        str : int | float,  # total_income
+        str : int | float,  # total_taxable_income
+        str : list[tuple[int, int | float]],  # tax_rates_and_amount_parts
+    ],
+]:
     income_tax_dict = {}
     total_income = 0
     taxable_total_income = 0
     extra_receipts = annual_receipts_count - 12
-    month = None
-    months_list = [month for month in Month]
-    left_within_current_rate_borders = 0
-    current_tax_rate = 0
     for month in Month:
         if month == Month.DEC and extra_receipts:
-            current_month_receipt = monthly_salary * extra_receipts
+            current_month_receipt = monthly_salary * (1 + extra_receipts)
         else:
             current_month_receipt = monthly_salary
+
         taxable_current_month_receipt = current_month_receipt
         if tax_free_allowances:
             taxable_current_month_receipt -= tax_free_allowances
-            tax_free_allowances = abs(taxable_current_month_receipt)
+            taxable_current_month_receipt = if_negative_convert_to_zero(
+                taxable_current_month_receipt
+            )
+            tax_free_allowances -= current_month_receipt - taxable_current_month_receipt
+            tax_free_allowances = if_negative_convert_to_zero(tax_free_allowances)
 
         tax_rates_and_amount_parts = get_income_tax_rates_for_receipt_parts(
             taxable_total_income,
@@ -176,7 +189,7 @@ def calculate_income_tax(
             "tax_free_allowances": current_month_receipt
             - taxable_current_month_receipt,
             "total_income": total_income,
-            "total_taxable_income": total_income,
+            "total_taxable_income": taxable_total_income,
             "tax_rates_and_amount_parts": tax_rates_and_amount_parts,
         }
 
@@ -191,15 +204,18 @@ def perform_calculations(
     children_count: int = 0,
     over_65_count: int = 0,
     over_75_count: int = 0,
+    social_security_deductions: int | float = 0,
 ) -> dict[
-    Month : [
-        dict[
-            str : int | float,  # brutto_salary
-            str : int | float,  # income_tax
-            str : int | float,  # social_security_tax
-            str : int | float,  # netto_salary
-        ]
-    ]
+    Month : dict[
+        str : int | float,  # receipt_brutto
+        str : int | float,  # income_tax_amount
+        str : int | float,  # receipt_netto
+        str : int | float,  # tax_free_allowances
+        str : int | float,  # total_income
+        str : int | float,  # total_taxable_income
+        str : list[tuple[int, int | float]],  # tax_rates_and_amount_parts
+        str : int | float,  # social_security_deductions
+    ],
 ]:
     assert (salary_eur and not salary_pln) or (salary_pln and not salary_eur)
 
@@ -218,3 +234,14 @@ def perform_calculations(
         over_65_count=over_65_count,
         over_75_count=over_75_count,
     )
+    receipts_per_month_with_tax_deductions = calculate_income_tax(
+        monthly_salary, annual_receipts, tax_free_allowance
+    )
+    for month in Month:
+        receipts_per_month_with_tax_deductions[month][
+            "receipt_netto"
+        ] -= social_security_deductions
+        receipts_per_month_with_tax_deductions[month][
+            "social_security_deductions"
+        ] = social_security_deductions
+    return receipts_per_month_with_tax_deductions
