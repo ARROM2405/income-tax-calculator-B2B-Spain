@@ -1,51 +1,23 @@
 from typing import Optional
-from enum import Enum
 
+from enums import IncomeTaxBorder, Month
 from utils import if_negative_convert_to_zero
 
-
-class IncomeTaxBorder(Enum):  # tuple[0]: border under in EUR, tuple[1]: income tax rate
-    BORDER_19_PERCENT = (12450, 19)
-    BORDER_24_PERCENT = (20200, 24)
-    BORDER_30_PERCENT = (35200, 30)
-    BORDER_37_PERCENT = (60000, 37)
-    BORDER_45_PERCENT = (300000, 45)
-    BORDER_47_PERCENT = (
-        float("inf"),
-        47,
-    )  # Salary over 300 000 EUR annual is taxed 47%.
-
-
-class Month(Enum):
-    JAN = "January"
-    FEB = "February"
-    MAR = "March"
-    APR = "April"
-    MAY = "May"
-    JUN = "June"
-    JUL = "July"
-    AUG = "August"
-    SEP = "September"
-    OCT = "October"
-    NOV = "November"
-    DEC = "December"
-
-
-SALARY_IN_PLN = None
+SALARY_IN_OTHER_CURRENCY = None
 SALARY_IN_EUR = None
 
-PLN_TO_EUR_RATE = None
+OTHER_CURRENCY_TO_EUR_RATE = None
 
 CHILDREN = None
 ELDER_OVER_65 = None
 ELDER_OVER_75 = None
 
 
-def convert_pln_salary_to_eur(
-    salary_pln: int | float,
+def convert_salary_to_eur(
+    salary_other_curerncy: int | float,
     rate: int | float,
 ) -> float:
-    return salary_pln / rate
+    return salary_other_curerncy / rate
 
 
 def calculate_tax_free_allowance_based_on_children(children_count: int) -> int:
@@ -197,7 +169,7 @@ def calculate_income_tax(
 
 
 def perform_calculations(
-    salary_pln: Optional[int | float] = None,
+    salary_other_currency: Optional[int | float] = None,
     salary_eur: Optional[int | float] = None,
     rate: Optional[int | float] = None,
     annual_receipts: int = 12,
@@ -217,13 +189,15 @@ def perform_calculations(
         str : int | float,  # social_security_deductions
     ],
 ]:
-    assert (salary_eur and not salary_pln) or (salary_pln and not salary_eur)
+    assert (salary_eur and not salary_other_currency) or (
+        salary_other_currency and not salary_eur
+    )
 
-    if salary_pln:
+    if salary_other_currency:
         assert rate is not None
 
     monthly_salary = (
-        salary_eur if salary_eur else convert_pln_salary_to_eur(salary_pln, rate)
+        salary_eur if salary_eur else convert_salary_to_eur(salary_other_currency, rate)
     )
 
     annual_income = monthly_salary * annual_receipts

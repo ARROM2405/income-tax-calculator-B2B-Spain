@@ -3,13 +3,12 @@ from tax_calculation import (
     calculate_tax_free_allowance_based_on_elder,
     calculate_tax_free_allowance,
     get_income_tax_percent_rate_and_border_leftover,
-    IncomeTaxBorder,
     get_income_tax_rates_for_receipt_parts,
     get_income_tax_amount,
     calculate_income_tax,
-    Month,
     perform_calculations,
 )
+from enums import IncomeTaxBorder, Month
 
 
 def test_calculate_tax_free_allowance_based_on_children():
@@ -181,7 +180,7 @@ def test_perform_calculations():
     children_count = 1
     social_security_deductions = 100
     result_dict = perform_calculations(
-        salary_pln=salary_pln,
+        salary_other_currency=salary_pln,
         rate=rate,
         annual_receipts=annual_receipts_count,
         children_count=children_count,
