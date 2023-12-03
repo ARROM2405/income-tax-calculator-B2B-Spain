@@ -7,6 +7,7 @@ from tax_calculation import (
     get_income_tax_amount,
     calculate_income_tax,
     perform_calculations,
+    get_social_security_deductions_amount,
 )
 from enums import IncomeTaxBorder, Month
 
@@ -178,27 +179,59 @@ def test_perform_calculations():
     rate = 4.7
     annual_receipts_count = 15
     children_count = 1
-    social_security_deductions = 100
     result_dict = perform_calculations(
         salary_other_currency=salary_pln,
         rate=rate,
         annual_receipts=annual_receipts_count,
         children_count=children_count,
-        social_security_deductions=social_security_deductions,
     )
-    assert result_dict[Month.JAN]["receipt_netto"] == 2786
-    assert result_dict[Month.FEB]["receipt_netto"] == 2330
-    assert result_dict[Month.MAR]["receipt_netto"] == 2330
-    assert result_dict[Month.APR]["receipt_netto"] == 2330
-    assert result_dict[Month.MAY]["receipt_netto"] == 2322.5
-    assert result_dict[Month.JUN]["receipt_netto"] == 2180
-    assert result_dict[Month.JUL]["receipt_netto"] == 2180
-    assert result_dict[Month.AUG]["receipt_netto"] == 2096
-    assert result_dict[Month.SEP]["receipt_netto"] == 2000
-    assert result_dict[Month.OCT]["receipt_netto"] == 2000
-    assert result_dict[Month.NOV]["receipt_netto"] == 2000
-    assert result_dict[Month.DEC]["receipt_netto"] == 7782
+    assert result_dict[Month.JAN][
+        "receipt_netto"
+    ] == 2886 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.FEB][
+        "receipt_netto"
+    ] == 2430 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.MAR][
+        "receipt_netto"
+    ] == 2430 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.APR][
+        "receipt_netto"
+    ] == 2430 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.MAY][
+        "receipt_netto"
+    ] == 2422.5 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.JUN][
+        "receipt_netto"
+    ] == 2280 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.JUL][
+        "receipt_netto"
+    ] == 2280 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.AUG][
+        "receipt_netto"
+    ] == 2196 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.SEP][
+        "receipt_netto"
+    ] == 2100 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.OCT][
+        "receipt_netto"
+    ] == 2100 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.NOV][
+        "receipt_netto"
+    ] == 2100 - get_social_security_deductions_amount(salary_pln / 4.7)
+    assert result_dict[Month.DEC][
+        "receipt_netto"
+    ] == 7882 - get_social_security_deductions_amount(salary_pln * 3 / 4.7)
 
-    assert [val["social_security_deductions"] for val in result_dict.values()] == [
-        100
-    ] * 12
+
+def test_perform_calculations_less_than_12_receipts():
+    salary_pln = 3000 * 4.7
+    rate = 4.7
+    annual_receipts_count = 10
+    children_count = 1
+    result_dict = perform_calculations(
+        salary_other_currency=salary_pln,
+        rate=rate,
+        annual_receipts=annual_receipts_count,
+        children_count=children_count,
+    )
+    assert len(result_dict) == annual_receipts_count

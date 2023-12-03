@@ -1,5 +1,3 @@
-from typing import Optional
-
 from enums import IncomeTaxBorder, Month
 from utils import if_negative_convert_to_zero
 
@@ -130,7 +128,7 @@ def calculate_income_tax(
     total_income = 0
     taxable_total_income = 0
     extra_receipts = annual_receipts_count - 12
-    for month in Month:
+    for month in list(Month)[:annual_receipts_count]:
         if month == Month.DEC and extra_receipts:
             current_month_receipt = monthly_salary * (1 + extra_receipts)
         else:
@@ -168,15 +166,44 @@ def calculate_income_tax(
     return income_tax_dict
 
 
+def get_social_security_deductions_amount(receipt: int | float):
+    if receipt < 670:
+        return 230
+    if receipt <= 900:
+        return 260
+    if receipt < 1166.7:
+        return 275
+    if receipt <= 1300:
+        return 291
+    if receipt <= 1700:
+        return 294
+    if receipt <= 1850:
+        return 310
+    if receipt <= 2030:
+        return 315
+    if receipt <= 2330:
+        return 320
+    if receipt <= 2760:
+        return 330
+    if receipt <= 3190:
+        return 350
+    if receipt <= 3620:
+        return 370
+    if receipt <= 4050:
+        return 390
+    if receipt <= 6000:
+        return 420
+    return 500
+
+
 def perform_calculations(
-    salary_other_currency: Optional[int | float] = None,
-    salary_eur: Optional[int | float] = None,
-    rate: Optional[int | float] = None,
+    salary_other_currency: int | float = None,
+    salary_eur: int | float = None,
+    rate: int | float = None,
     annual_receipts: int = 12,
     children_count: int = 0,
     over_65_count: int = 0,
     over_75_count: int = 0,
-    social_security_deductions: int | float = 0,
 ) -> dict[
     Month : dict[
         str : int | float,  # receipt_brutto
@@ -211,7 +238,10 @@ def perform_calculations(
     receipts_per_month_with_tax_deductions = calculate_income_tax(
         monthly_salary, annual_receipts, tax_free_allowance
     )
-    for month in Month:
+    for month in list(Month)[:annual_receipts]:
+        social_security_deductions = get_social_security_deductions_amount(
+            receipts_per_month_with_tax_deductions[month]["receipt_brutto"]
+        )
         receipts_per_month_with_tax_deductions[month][
             "receipt_netto"
         ] -= social_security_deductions

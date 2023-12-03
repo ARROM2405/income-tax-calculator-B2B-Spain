@@ -2,7 +2,6 @@ import flet as ft
 from flet_core import TextAlign, TextThemeStyle, FontWeight
 
 from custom_classes import (
-    Block,
     TextFieldWithErrorField,
     ErrorsContainer,
     TextFieldsContainer,
@@ -13,15 +12,12 @@ from utils import (
     activate_on_dropdown_change,
     activate_on_checkbox_change,
     some_test_on_click,
+    add_page_controls,
 )
 
 
 def main(page: ft.Page):
     page.title = "B2B in Spain tax calculator"
-
-    # input_block_controls = []
-    # output_block = Block()
-    errors_block = Block()
 
     main_label = ft.Text(
         value="Spanish income tax calculator. Creator is not tax expert, "
@@ -198,16 +194,14 @@ def main(page: ft.Page):
         columns=4,
     )
 
-    page.add(
-        main_label,
-        responsive_row_salary_currency,
-        responsive_row_monthly_receipt,
-        kids_tax_free_allowance_row,
-        over_65_tax_free_allowance_row,
-        over_75_tax_free_allowance_row,
-        submit_button,
+    add_page_controls(
+        page=page,
+        main_label=main_label,
+        responsive_row_salary_currency=responsive_row_salary_currency,
+        responsive_row_monthly_receipt=responsive_row_monthly_receipt,
+        kids_tax_free_allowance_row=kids_tax_free_allowance_row,
+        over_65_tax_free_allowance_row=over_65_tax_free_allowance_row,
+        over_75_tax_free_allowance_row=over_75_tax_free_allowance_row,
+        submit_button=submit_button,
     )
     page.update()
-
-
-ft.app(target=main)

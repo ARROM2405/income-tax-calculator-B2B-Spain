@@ -6,8 +6,8 @@ import flet as ft
 import flet_core
 from flet_core import FontWeight
 
-from utils import validate_text_field_numeric, validate_text_field
-from typing import Container, Iterable
+from utils import validate_text_field
+from typing import Iterable
 
 
 class Block:
